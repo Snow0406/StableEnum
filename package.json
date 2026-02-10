@@ -1,6 +1,6 @@
 {
   "name": "com.hy.stableenum",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "Stable Enum",
   "description": "A Unity package that provides a Stable Enum implementation to maintain enum values across code changes.",
   "unity": "2022.3",
