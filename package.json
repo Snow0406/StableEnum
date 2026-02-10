@@ -1,0 +1,24 @@
+{
+  "name": "com.hy.stableenum",
+  "version": "1.0.0",
+  "displayName": "Stable Enum",
+  "description": "A Unity package that provides a Stable Enum implementation to maintain enum values across code changes.",
+  "unity": "2022.3",
+  "documentationUrl": "",
+  "changelogUrl": "https://github.com/Snow0406/StableEnum/commits/main",
+  "license": "MIT",
+  "dependencies": {},
+  "samples": [
+    {}
+  ],
+  "keywords": [
+    "Unity",
+    "Enums",
+    "Stable",
+    "Serialization"
+  ],
+  "author": {
+    "name": "hy",
+    "url": "https://hyuki.dev"
+  }
+}
