@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using StableEnum.Runtime;
+using StableEnum;
 
 namespace StableEnum.Editor
 {
@@ -71,7 +71,7 @@ namespace StableEnum.Editor
 
         private static List<Type> CollectStableEnumTypes()
         {
-            return TypeCache.GetTypesWithAttribute<StableEnumAttribute>().ToList();
+            return TypeCache.GetTypesWithAttribute<StableAttribute>().ToList();
         }
 
         /// <summary>현재 enum 상태를 딕셔너리로 변환.</summary>

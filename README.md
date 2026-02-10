@@ -2,7 +2,7 @@
 
 **Stable Enum** is a Unity package that prevents Inspector-serialized enum values from breaking when you reorder, insert, or remove enum members.
 
-It automatically detects changes to enums marked with `[StableEnum]` and migrates serialization data in Scenes, Prefabs, and ScriptableObjects to match the new integer values, keeping your data safe.
+It automatically detects changes to enums marked with `[Stable]` and migrates serialization data in Scenes, Prefabs, and ScriptableObjects to match the new integer values, keeping your data safe.
 
 ## Features
 
@@ -25,12 +25,12 @@ It automatically detects changes to enums marked with `[StableEnum]` and migrate
 
 ## Usage
 
-1. Add the `[StableEnum]` attribute to your enum definition.
+1. Add the `[Stable]` attribute to your enum definition.
 
 ```csharp
 using StableEnum;
 
-[StableEnum]
+[Stable]
 public enum WeaponType
 {
     Sword,
@@ -54,7 +54,7 @@ public enum MyEnum { A, B, C }
 **Change:** You insert `NEW` at the beginning.
 
 ```csharp
-[StableEnum]
+[Stable]
 public enum MyEnum { NEW, A, B, C }
 // NEW=0, A=1, B=2, C=3
 ```
