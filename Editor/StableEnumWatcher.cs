@@ -79,7 +79,7 @@ namespace StableEnum.Editor
         {
             var snap = new Dictionary<string, int>();
             foreach (var name in Enum.GetNames(enumType))
-                snap[name] = (int)Enum.Parse(enumType, name);
+                snap[name] = Convert.ToInt32(Enum.Parse(enumType, name));
             return snap;
         }
 
