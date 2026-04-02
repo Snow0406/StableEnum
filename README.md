@@ -8,7 +8,7 @@ It automatically detects changes to enums marked with `[Stable]` and migrates se
 
 - **Automatic Migration**: Detects enum changes on compilation and updates assets automatically.
 - **Zero Boilerplate**: Just add an attribute.
-- **Project Settings Storage**: Saves enum history in `ProjectSettings/StableEnumRegistry.json` (version control friendly).
+- **Local Storage**: Saves enum history in `Library/StableEnumRegistry.json`
 - **Manual Control**: Includes a dashboard at `Tools > StableEnum` to view registered enums and logs.
 
 ## Installation

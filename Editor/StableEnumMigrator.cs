@@ -21,10 +21,10 @@ namespace StableEnum.Editor
             public int FieldsModified;
         }
 
-        /// <param name="typeName">enum의 단순 클래스명 (e.g. "WeaponType")</param>
+        /// <param name="enumType">대상 enum의 System.Type</param>
         /// <param name="currentMemberNames">현재 enum 멤버명 배열 (선언 순서 유지)</param>
         /// <param name="remap">{ 이전 int값 → 새 int값 } 테이블</param>
-        public static Result Migrate(string typeName, string[] currentMemberNames, Dictionary<int, int> remap)
+        public static Result Migrate(System.Type enumType, string[] currentMemberNames, Dictionary<int, int> remap)
         {
             var result = new Result();
             if (remap.Count == 0) return result;
@@ -48,7 +48,7 @@ namespace StableEnum.Editor
                 {
                     if (asset == null) continue;
                     var so = new SerializedObject(asset);
-                    int fields = MigrateObject(so, typeName, currentMemberNames, remap);
+                    int fields = MigrateObject(so, enumType, currentMemberNames, remap);
                     if (fields > 0)
                     {
                         so.ApplyModifiedPropertiesWithoutUndo();
@@ -78,7 +78,7 @@ namespace StableEnum.Editor
                 {
                     if (comp == null) continue;
                     var so = new SerializedObject(comp);
-                    int fields = MigrateObject(so, typeName, currentMemberNames, remap);
+                    int fields = MigrateObject(so, enumType, currentMemberNames, remap);
                     if (fields > 0)
                     {
                         so.ApplyModifiedPropertiesWithoutUndo();
@@ -103,18 +103,18 @@ namespace StableEnum.Editor
 
         private static int MigrateObject(
             SerializedObject so,
-            string typeName,
+            System.Type enumType,
             string[] currentMemberNames,
             Dictionary<int, int> remap)
         {
             int count = 0;
-            var prop= so.GetIterator();
+            var prop = so.GetIterator();
             bool hasNext = prop.Next(true);
 
             while (hasNext)
             {
                 if (prop.propertyType == SerializedPropertyType.Enum
-                    && IsTargetEnumType(prop, typeName, currentMemberNames)
+                    && IsTargetEnumType(prop, enumType, currentMemberNames)
                     && remap.TryGetValue(prop.intValue, out int newVal))
                 {
                     prop.intValue = newVal;
@@ -127,20 +127,34 @@ namespace StableEnum.Editor
         }
 
         /// <summary>
-        /// prop.type 으로 1차 판별, 실패 시 enumDisplayNames 로 fallback.
-        /// Unity 버전에 따라 prop.type 이 "int" 를 반환하는 경우 대비.
+        /// Unity 2022: prop.type 으로 판별. Unity 6+: boxedValue 타입 비교.
+        /// 공통 fallback: enumNames(raw 이름) 비교.
         /// </summary>
-        private static bool IsTargetEnumType(SerializedProperty prop, string typeName, string[] memberNames)
+        private static bool IsTargetEnumType(SerializedProperty prop, System.Type enumType, string[] memberNames)
         {
-            // 1차: prop.type 직접 비교 (Unity 2022 기본)
-            if (prop.type == typeName) return true;
+#if UNITY_6000_0_OR_NEWER
+            // Unity 6+: prop.type이 더 이상 enum 타입명을 반환하지 않으므로 boxedValue로 정확한 타입 비교
+            try
+            {
+                var boxed = prop.boxedValue;
+                if (boxed != null && boxed.GetType() == enumType)
+                    return true;
+            }
+            catch
+            {
+                // boxedValue 접근 실패 시 fallback으로 진행
+            }
+#else
+            // Unity 2022: prop.type이 enum 타입명을 반환
+            if (prop.type == enumType.Name) return true;
+#endif
 
-            // 2차 fallback: enumDisplayNames 로 현재 멤버명과 비교
-            var displayNames = prop.enumDisplayNames;
-            if (displayNames == null || displayNames.Length != memberNames.Length) return false;
+            // fallback: enumNames(raw 이름)로 멤버 비교 — enumDisplayNames는 NicifyVariableName 적용되어 불일치 가능
+            var enumNames = prop.enumNames;
+            if (enumNames == null || enumNames.Length != memberNames.Length) return false;
 
             for (int i = 0; i < memberNames.Length; i++)
-                if (displayNames[i] != memberNames[i]) return false;
+                if (enumNames[i] != memberNames[i]) return false;
 
             return true;
         }
