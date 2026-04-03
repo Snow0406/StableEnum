@@ -10,8 +10,8 @@ using StableEnum;
 namespace StableEnum.Editor
 {
     /// <summary>
-    /// 컴파일 완료(도메인 리로드) 시 자동으로 [StableEnum] enum의 변경을 감지하고
-    /// StableEnumMigrator 를 통해 프로젝트 에셋을 자동 마이그레이션한다.
+    /// Automatically detects [StableEnum] enum changes on compilation (domain reload)
+    /// and auto-migrates project assets via StableEnumMigrator.
     /// </summary>
     [InitializeOnLoad]
     internal static class StableEnumWatcher
@@ -22,17 +22,19 @@ namespace StableEnum.Editor
         {
             StableEnumRegistry.InvalidateCache();
 
-            // 에디터 시작 직후 즉시 실행하면 AssetDatabase 가 아직 준비 안 됐을 수 있음
+            // Running immediately after editor startup may find AssetDatabase not ready yet
             EditorApplication.delayCall += RunCheck;
         }
 
-        /// <summary>수동 실행 (EditorWindow 의 "지금 체크" 버튼에서 호출).</summary>
+        /// <summary>Manual invocation (called from the EditorWindow "Run Check" button).</summary>
         public static void RunCheck()
         {
             var stableEnums = CollectStableEnumTypes();
 
             foreach (var type in stableEnums)
                 ProcessEnum(type);
+            
+            Log($"[StableEnum] Check complete ({MigrationLog.Count} migrations)");
         }
 
         private static void ProcessEnum(Type enumType)
@@ -42,30 +44,30 @@ namespace StableEnum.Editor
 
             if (saved == null)
             {
-                // 최초 등록
+                // First registration
                 StableEnumRegistry.SetSnapshot(enumType.FullName, current);
-                Log($"[StableEnum] 등록 완료: {enumType.Name}");
+                Log($"[StableEnum] Registered: {enumType.Name}");
                 return;
             }
 
             var remap = BuildRemapTable(saved, current);
             if (remap.Count == 0)
             {
-                // 변경 없음 -> 레지스트리만 최신화 (새 멤버 추가 등 대비)
+                // No changes -> just update registry (in case of new members added)
                 StableEnumRegistry.SetSnapshot(enumType.FullName, current);
                 return;
             }
             
-            Log($"[StableEnum] '{enumType.Name}' 변경 감지 — {BuildChangeDescription(saved, current)}");
+            Log($"[StableEnum] '{enumType.Name}' change detected — {BuildChangeDescription(saved, current)}");
 
-            var currentMemberNames = Enum.GetNames(enumType); // 선언 순서 유지
+            var currentMemberNames = Enum.GetNames(enumType); // Preserve declaration order
             bool isFlags = enumType.IsDefined(typeof(System.FlagsAttribute), false);
             var result = StableEnumMigrator.Migrate(enumType, currentMemberNames, remap, isFlags);
 
-            Log($"[StableEnum] '{enumType.Name}' 마이그레이션 완료 — " +
-                $"오브젝트 {result.ObjectsModified}개, 필드 {result.FieldsModified}개 수정");
+            Log($"[StableEnum] '{enumType.Name}' migration complete — " +
+                $"{result.ObjectsModified} objects, {result.FieldsModified} fields modified");
 
-            // 마이그레이션 후 레지스트리 갱신
+            // Update registry after migration
             StableEnumRegistry.SetSnapshot(enumType.FullName, current);
         }
         
@@ -75,7 +77,7 @@ namespace StableEnum.Editor
             return TypeCache.GetTypesWithAttribute<StableAttribute>().ToList();
         }
 
-        /// <summary>현재 enum 상태를 딕셔너리로 변환.</summary>
+        /// <summary>Converts current enum state to a dictionary.</summary>
         private static Dictionary<string, int> TakeSnapshot(Type enumType)
         {
             var snap = new Dictionary<string, int>();
@@ -85,7 +87,7 @@ namespace StableEnum.Editor
         }
 
         /// <summary>
-        /// 이전/현재 스냅샷 비교 -> 같은 이름인데 int값이 달라진 케이스를 remap 테이블로 반환.
+        /// Compares saved/current snapshots -> returns remap table for entries where the same name has a changed int value.
         /// </summary>
         private static Dictionary<int, int> BuildRemapTable(
             Dictionary<string, int> saved,
@@ -95,11 +97,11 @@ namespace StableEnum.Editor
 
             foreach (var kv in current)
             {
-                // 새로 추가된 멤버는 remap 불필요
+                // Newly added members don't need remapping
                 if (!saved.TryGetValue(kv.Key, out int oldVal)) continue;
-                // 값이 그대로면 스킵
+                // Skip if value unchanged
                 if (oldVal == kv.Value) continue;
-                // 이미 같은 구값에 대한 매핑이 있으면 덮어쓰지 않음 (충돌 방지)
+                // Don't overwrite existing mapping for the same old value (prevent collision)
                 if (!remap.ContainsKey(oldVal))
                     remap[oldVal] = kv.Value;
             }
@@ -108,7 +110,7 @@ namespace StableEnum.Editor
         }
 
         /// <summary>
-        /// saved랑 current 비교해서 "추가: CC / 이동: BB(1→2)" 형태 문자열 반환.
+        /// Compares saved and current to return a string like "added: CC / removed: BB".
         /// </summary>
         private static string BuildChangeDescription(
             Dictionary<string, int> saved,
@@ -118,13 +120,13 @@ namespace StableEnum.Editor
 
             var added = current.Keys.Except(saved.Keys).ToList();
             if (added.Count > 0)
-                parts.Add($"추가: {string.Join(", ", added)}");
+                parts.Add($"added: {string.Join(", ", added)}");
 
             var removed = saved.Keys.Except(current.Keys).ToList();
             if (removed.Count > 0)
-                parts.Add($"제거: {string.Join(", ", removed)}");
+                parts.Add($"removed: {string.Join(", ", removed)}");
 
-            return parts.Count > 0 ? string.Join(" / ", parts) : "(변경 없음)";
+            return parts.Count > 0 ? string.Join(" / ", parts) : "(no changes)";
         }
 
         private static void Log(string msg)

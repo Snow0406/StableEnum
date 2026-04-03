@@ -8,8 +8,8 @@ using UnityEngine;
 namespace StableEnum.Editor
 {
     /// <summary>
-    /// ProjectSettings/StableEnumRegistry.json 에 enum 멤버별 int 값 이력을 영속 저장.
-    /// [StableEnum] enum이 추가/삭제/재정렬될 때 마이그레이션 판단의 기준이 된다.
+    /// Persistently stores per-member int value history in ProjectSettings/StableEnumRegistry.json.
+    /// Serves as the baseline for migration decisions when a [StableEnum] enum is added, removed, or reordered.
     /// </summary>
     internal static class StableEnumRegistry
     {
@@ -17,7 +17,7 @@ namespace StableEnum.Editor
 
         private static Dictionary<string, Dictionary<string, int>> _cache;
         
-        /// <summary>저장된 스냅샷 반환. 처음 등록되는 enum이면 null.</summary>
+        /// <summary>Returns the stored snapshot. Null if the enum has not been registered yet.</summary>
         public static Dictionary<string, int> GetSnapshot(string enumFullName)
         {
             EnsureLoaded();
@@ -31,10 +31,10 @@ namespace StableEnum.Editor
             Flush();
         }
 
-        /// <summary>도메인 리로드 후 캐시 무효화 (stale 데이터 방지).</summary>
+        /// <summary>Invalidates the cache after domain reload (prevents stale data).</summary>
         public static void InvalidateCache() => _cache = null;
 
-        /// <summary>등록된 모든 enum 이름 목록 (EditorWindow 용).</summary>
+        /// <summary>List of all registered enum names (for EditorWindow).</summary>
         public static IEnumerable<string> GetAllEnumFullNames()
         {
             EnsureLoaded();
@@ -65,7 +65,7 @@ namespace StableEnum.Editor
             }
             catch (Exception e)
             {
-                Debug.LogError($"[StableEnum] Registry 로드 실패: {e.Message}");
+                Debug.LogError($"[StableEnum] Failed to load registry: {e.Message}");
             }
         }
 
@@ -90,7 +90,7 @@ namespace StableEnum.Editor
             }
             catch (Exception e)
             {
-                Debug.LogError($"[StableEnum] Registry 저장 실패: {e.Message}");
+                Debug.LogError($"[StableEnum] Failed to save registry: {e.Message}");
             }
         }
 
