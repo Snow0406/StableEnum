@@ -8,13 +8,12 @@ using UnityEngine;
 namespace StableEnum.Editor
 {
     /// <summary>
-    /// Library/StableEnumRegistry.json 에 enum 멤버별 int 값 이력을 영속 저장.
-    /// Library/ 폴더는 .gitignore 대상이므로 소스 관리에 노출되지 않는다.
+    /// ProjectSettings/StableEnumRegistry.json 에 enum 멤버별 int 값 이력을 영속 저장.
     /// [StableEnum] enum이 추가/삭제/재정렬될 때 마이그레이션 판단의 기준이 된다.
     /// </summary>
     internal static class StableEnumRegistry
     {
-        private const string FilePath = "Library/StableEnumRegistry.json";
+        private const string FilePath = "ProjectSettings/StableEnumRegistry.json";
 
         private static Dictionary<string, Dictionary<string, int>> _cache;
         
