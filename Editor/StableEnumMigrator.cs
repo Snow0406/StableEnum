@@ -24,7 +24,7 @@ namespace StableEnum.Editor
         /// <param name="enumType">대상 enum의 System.Type</param>
         /// <param name="currentMemberNames">현재 enum 멤버명 배열 (선언 순서 유지)</param>
         /// <param name="remap">{ 이전 int값 → 새 int값 } 테이블</param>
-        public static Result Migrate(System.Type enumType, string[] currentMemberNames, Dictionary<int, int> remap)
+        public static Result Migrate(System.Type enumType, string[] currentMemberNames, Dictionary<int, int> remap, bool isFlags)
         {
             var result = new Result();
             if (remap.Count == 0) return result;
@@ -48,7 +48,7 @@ namespace StableEnum.Editor
                 {
                     if (asset == null) continue;
                     var so = new SerializedObject(asset);
-                    int fields = MigrateObject(so, enumType, currentMemberNames, remap);
+                    int fields = MigrateObject(so, enumType, currentMemberNames, remap, isFlags);
                     if (fields > 0)
                     {
                         so.ApplyModifiedPropertiesWithoutUndo();
@@ -78,7 +78,7 @@ namespace StableEnum.Editor
                 {
                     if (comp == null) continue;
                     var so = new SerializedObject(comp);
-                    int fields = MigrateObject(so, enumType, currentMemberNames, remap);
+                    int fields = MigrateObject(so, enumType, currentMemberNames, remap, isFlags);
                     if (fields > 0)
                     {
                         so.ApplyModifiedPropertiesWithoutUndo();
@@ -105,7 +105,8 @@ namespace StableEnum.Editor
             SerializedObject so,
             System.Type enumType,
             string[] currentMemberNames,
-            Dictionary<int, int> remap)
+            Dictionary<int, int> remap,
+            bool isFlags)
         {
             int count = 0;
             var prop = so.GetIterator();
@@ -114,11 +115,37 @@ namespace StableEnum.Editor
             while (hasNext)
             {
                 if (prop.propertyType == SerializedPropertyType.Enum
-                    && IsTargetEnumType(prop, enumType, currentMemberNames)
-                    && remap.TryGetValue(prop.intValue, out int newVal))
+                    && IsTargetEnumType(prop, enumType, currentMemberNames))
                 {
-                    prop.intValue = newVal;
-                    count++;
+                    if (isFlags)
+                    {
+                        int oldVal = prop.intValue;
+                        int remaining = oldVal;
+                        int newVal = 0;
+                        bool changed = false;
+
+                        foreach (var kv in remap)
+                        {
+                            if ((remaining & kv.Key) == kv.Key && kv.Key != 0)
+                            {
+                                newVal |= kv.Value;
+                                remaining &= ~kv.Key;
+                                changed = true;
+                            }
+                        }
+                        newVal |= remaining;
+
+                        if (changed)
+                        {
+                            prop.intValue = newVal;
+                            count++;
+                        }
+                    }
+                    else if (remap.TryGetValue(prop.intValue, out int newVal))
+                    {
+                        prop.intValue = newVal;
+                        count++;
+                    }
                 }
                 hasNext = prop.Next(true);
             }
@@ -150,6 +177,8 @@ namespace StableEnum.Editor
 #endif
 
             // fallback: enumNames(raw 이름)로 멤버 비교 — enumDisplayNames는 NicifyVariableName 적용되어 불일치 가능
+            Debug.LogWarning($"[StableEnum] '{enumType.Name}' 타입 판별에 fallback(멤버 이름 비교)을 사용합니다. " +
+                $"동일한 멤버 구성을 가진 다른 enum이 있으면 오매칭될 수 있습니다. (property: {prop.propertyPath})");
             var enumNames = prop.enumNames;
             if (enumNames == null || enumNames.Length != memberNames.Length) return false;
 

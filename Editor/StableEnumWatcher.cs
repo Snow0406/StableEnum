@@ -59,7 +59,8 @@ namespace StableEnum.Editor
             Log($"[StableEnum] '{enumType.Name}' 변경 감지 — {BuildChangeDescription(saved, current)}");
 
             var currentMemberNames = Enum.GetNames(enumType); // 선언 순서 유지
-            var result = StableEnumMigrator.Migrate(enumType, currentMemberNames, remap);
+            bool isFlags = enumType.IsDefined(typeof(System.FlagsAttribute), false);
+            var result = StableEnumMigrator.Migrate(enumType, currentMemberNames, remap, isFlags);
 
             Log($"[StableEnum] '{enumType.Name}' 마이그레이션 완료 — " +
                 $"오브젝트 {result.ObjectsModified}개, 필드 {result.FieldsModified}개 수정");

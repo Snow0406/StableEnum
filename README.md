@@ -8,6 +8,7 @@ It automatically detects changes to enums marked with `[Stable]` and migrates se
 
 - **Automatic Migration**: Detects enum changes on compilation and updates assets automatically.
 - **Zero Boilerplate**: Just add an attribute.
+- **Flags Support**: Automatically migrates combined bit-flag values in `[Flags]` enums.
 - **Local Storage**: Saves enum history in `ProjectSettings/StableEnumRegistry.json`
 - **Manual Control**: Includes a dashboard at `Tools > StableEnum` to view registered enums and logs.
 
@@ -62,6 +63,25 @@ public enum MyEnum { NEW, A, B, C }
 **Result:**
 Without this package, the Inspector value `1` would now point to `A` (wrong).  
 With **Stable Enum**, the serialized value `1` is automatically updated to `2` (B), preserving your data.
+
+### Flags Enum
+
+`[Flags]` enums are also supported. Combined bit-flag values are automatically remapped per-bit.
+
+```csharp
+using System;
+using StableEnum;
+
+[Stable, Flags]
+public enum Permission
+{
+    Read    = 1,
+    Write   = 2,
+    Execute = 4
+}
+```
+
+For example, if `Read | Write (3)` is serialized and the member values change, each flag bit is tracked individually and migrated to the correct combination.
 
 ## License
 
