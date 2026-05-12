@@ -81,7 +81,8 @@ namespace StableEnum.Editor
                 finally
                 {
                     AssetDatabase.StopAssetEditing();
-                    AssetDatabase.SaveAssets();
+                    if (result.FieldsModified > 0)
+                        AssetDatabase.SaveAssets();
                 }
 
                 // Open scenes (handled outside AssetDatabase batch)

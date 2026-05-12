@@ -27,8 +27,26 @@ namespace StableEnum.Editor
         public static void SetSnapshot(string enumFullName, Dictionary<string, int> snapshot)
         {
             EnsureLoaded();
+
+            // 동일한 스냅샷이면 디스크 쓰기 생략.
+            // Watcher가 변경 0건일 때도 이 메서드를 호출하므로,
+            // 가드가 없으면 도메인 리로드마다 JSON이 재작성되어
+            // 사용자 git 설정(core.autocrlf 등)에 따라 가짜 modified로 표시됨.
+            if (_cache.TryGetValue(enumFullName, out var existing)
+                && SnapshotsEqual(existing, snapshot))
+                return;
+
             _cache[enumFullName] = snapshot;
             Flush();
+        }
+
+        private static bool SnapshotsEqual(Dictionary<string, int> a, Dictionary<string, int> b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a.Count != b.Count) return false;
+            foreach (var kv in a)
+                if (!b.TryGetValue(kv.Key, out var v) || v != kv.Value) return false;
+            return true;
         }
 
         /// <summary>Invalidates the cache after domain reload (prevents stale data).</summary>
