@@ -8,7 +8,7 @@ namespace StableEnum
     /// Prevents inspector-serialized values from breaking when an enum is reordered, extended, or pruned. <br/>
     /// </summary>
     [AttributeUsage(AttributeTargets.Enum, AllowMultiple = false)]
-    public sealed class StableAttribute : Attribute
+    public sealed class StableEnumAttribute : Attribute
     {
     }
 }

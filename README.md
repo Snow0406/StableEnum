@@ -2,11 +2,20 @@
 
 **Stable Enum** is a Unity package that prevents Inspector-serialized enum values from breaking when you reorder, insert, or remove enum members.
 
-It automatically detects changes to enums marked with `[Stable]` and migrates serialization data in Scenes, Prefabs, and ScriptableObjects to match the new integer values, keeping your data safe.
+It automatically detects changes to enums marked with `[StableEnum]` and migrates serialization data in Scenes, Prefabs, ScriptableObjects, and Animation Events to match the new integer values, keeping your data safe.
+
+> **⚠️ Migrating from v2.x → v3.0**
+> The attribute was renamed from `[Stable]` to `[StableEnum]`. Replace all usages in your codebase:
+>
+> ```diff
+> - [Stable]
+> + [StableEnum]
+> ```
 
 ## Features
 
 - **Automatic Migration**: Detects enum changes on compilation and updates assets automatically.
+- **Animation Event Support**: Migrates `int` enum parameters in Animation Events via `[StableEnumEvent]`.
 - **Zero Boilerplate**: Just add an attribute.
 - **Flags Support**: Automatically migrates combined bit-flag values in `[Flags]` enums.
 - **Local Storage**: Saves enum history in `ProjectSettings/StableEnumRegistry.json`
@@ -26,12 +35,12 @@ It automatically detects changes to enums marked with `[Stable]` and migrates se
 
 ## Usage
 
-1. Add the `[Stable]` attribute to your enum definition.
+1. Add the `[StableEnum]` attribute to your enum definition.
 
 ```csharp
 using StableEnum;
 
-[Stable]
+[StableEnum]
 public enum WeaponType
 {
     Sword,
@@ -55,7 +64,7 @@ public enum MyEnum { A, B, C }
 **Change:** You insert `NEW` at the beginning.
 
 ```csharp
-[Stable]
+[StableEnum]
 public enum MyEnum { NEW, A, B, C }
 // NEW=0, A=1, B=2, C=3
 ```
@@ -72,7 +81,7 @@ With **Stable Enum**, the serialized value `1` is automatically updated to `2` (
 using System;
 using StableEnum;
 
-[Stable, Flags]
+[StableEnum, Flags]
 public enum Permission
 {
     Read    = 1,
@@ -82,6 +91,42 @@ public enum Permission
 ```
 
 For example, if `Read | Write (3)` is serialized and the member values change, each flag bit is tracked individually and migrated to the correct combination.
+
+### Animation Events
+
+Unity stores Animation Event enum parameters as raw `int` values inside `.anim` clips, so reordering an enum silently breaks those events as well. Mark the receiver method with `[StableEnumEvent]` and the package will migrate Animation Event `intParameter` values alongside the enum.
+
+```csharp
+using StableEnum;
+using UnityEngine;
+
+[StableEnum]
+public enum AttackPhase
+{
+    Windup,
+    Strike,
+    Recover
+}
+
+public class PlayerAnimationEvents : MonoBehaviour
+{
+    // Called from an Animation Event with an int parameter
+    [StableEnumEvent]
+    public void OnAttackPhase(AttackPhase phase)
+    {
+        // ...
+    }
+}
+```
+
+**Requirements** for `[StableEnumEvent]` methods:
+
+- Declared on a `MonoBehaviour`
+- Non-static, non-abstract, non-generic
+- Returns `void`
+- Exactly one parameter, and the parameter type must be an `enum` marked with `[StableEnum]`
+
+Methods that don't satisfy these constraints are skipped with a warning at migration time.
 
 ## License
 

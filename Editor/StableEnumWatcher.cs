@@ -65,7 +65,8 @@ namespace StableEnum.Editor
             var result = StableEnumMigrator.Migrate(enumType, currentMemberNames, remap, isFlags);
 
             Log($"[StableEnum] '{enumType.Name}' migration complete — " +
-                $"{result.ObjectsModified} objects, {result.FieldsModified} fields modified");
+                $"{result.ObjectsModified} objects, {result.FieldsModified} fields, " +
+                $"{result.AnimationClipsModified} animation clips, {result.AnimationEventsModified} animation events modified");
 
             // Update registry after migration
             StableEnumRegistry.SetSnapshot(enumType.FullName, current);
@@ -74,7 +75,7 @@ namespace StableEnum.Editor
 
         private static List<Type> CollectStableEnumTypes()
         {
-            return TypeCache.GetTypesWithAttribute<StableAttribute>().ToList();
+            return TypeCache.GetTypesWithAttribute<StableEnumAttribute>().ToList();
         }
 
         /// <summary>Converts current enum state to a dictionary.</summary>
